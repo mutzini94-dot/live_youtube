@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>유튜브 라이브 보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#0e0b0c; --panel:#161213; --tile:#1e1819; --line:#2c2324;
+    --ink:#f4ecec; --muted:#a8999a; --faint:#7c6f70;
+    --live:#ff2b32; --live-2:#ff5a60; --glow:rgba(255,43,50,.4);
+    --amber:#f5a623; --offline:#6b6264;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --disp:"Archivo",system-ui,sans-serif;
+    --kr:"Noto Sans KR",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:radial-gradient(1200px 600px at 80% -10%, rgba(255,43,50,.10), transparent 60%),var(--bg);
+       color:var(--ink); font-family:var(--kr); -webkit-font-smoothing:antialiased; line-height:1.5}
+  .stage{max-width:1120px; margin:0 auto; padding:26px 18px 48px}
+  a{color:inherit}
+
+  .brand{display:flex; align-items:center; gap:10px; font-family:var(--disp); font-weight:900; letter-spacing:.02em;
+         font-size:15px; text-transform:uppercase; color:var(--muted); margin-bottom:16px}
+  .brand .r{width:11px; height:11px; border-radius:50%; background:var(--live); box-shadow:0 0 12px var(--glow); animation:pulse 1.6s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,43,50,.5)}70%{box-shadow:0 0 0 8px rgba(255,43,50,0)}100%{box-shadow:0 0 0 0 rgba(255,43,50,0)}}
+
+  /* controls */
+  .controls{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:16px}
+  .ctop{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .ctop label{font-family:var(--mono); font-size:12px; color:var(--muted); cursor:pointer; display:inline-flex; align-items:center; gap:7px}
+  .btn{border:0; border-radius:11px; padding:11px 20px; font-family:var(--kr); font-weight:700; font-size:14px; cursor:pointer; white-space:nowrap}
+  .btn.go{color:#fff; background:linear-gradient(180deg,var(--live),#d81c23); box-shadow:0 8px 20px var(--glow)}
+  .btn.go:disabled{opacity:.55; cursor:default; box-shadow:none}
+  .btn.edit{color:var(--ink); background:transparent; box-shadow:inset 0 0 0 1px var(--line)}
+  .ctop .spacer{margin-left:auto}
+  details{margin-top:12px}
+  details summary{font-family:var(--mono); font-size:12px; color:var(--muted); cursor:pointer}
+  textarea{width:100%; margin-top:10px; min-height:120px; resize:vertical; padding:12px 14px; border-radius:10px;
+           border:1px solid var(--line); background:#141011; color:var(--ink); font-family:var(--mono); font-size:13px; line-height:1.7}
+  textarea:focus{outline:none; border-color:var(--live)}
+  .hint{font-family:var(--mono); font-size:11px; color:var(--faint); margin-top:8px}
+
+  /* summary strip */
+  .summary{font-family:var(--mono); font-size:12px; color:var(--faint); display:flex; flex-wrap:wrap; gap:8px 16px;
+           align-items:center; border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin-bottom:16px; background:rgba(255,255,255,.015)}
+  .summary .on{color:var(--live-2); font-weight:700} .summary b{color:var(--muted); font-weight:500}
+  .sep{color:#3a2f30}
+  .msg{font-family:var(--mono); font-size:13px; padding:14px 16px; border-radius:12px; display:none; margin-bottom:16px}
+  .msg.err{display:block; color:#ffb0b3; background:rgba(255,43,50,.08); border:1px solid rgba(255,43,50,.3)}
+  .msg.load{display:flex; align-items:center; gap:10px; color:var(--muted); background:var(--panel); border:1px solid var(--line)}
+  .spin{width:15px; height:15px; border:2px solid var(--line); border-top-color:var(--live); border-radius:50%; animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* grid */
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; overflow:hidden;
+        display:flex; flex-direction:column; transition:transform .1s ease, border-color .1s ease; text-decoration:none}
+  .card:hover{transform:translateY(-2px)}
+  .card.live{border-color:rgba(255,43,50,.35)}
+  .card.live:hover{border-color:var(--live)}
+  .thumb{position:relative; aspect-ratio:16/9; background:#000}
+  .thumb img{width:100%; height:100%; object-fit:cover; display:block}
+  .thumb::after{content:""; position:absolute; inset:0; box-shadow:inset 0 -50px 40px -30px rgba(0,0,0,.8)}
+  .rec{position:absolute; top:10px; left:10px; display:inline-flex; align-items:center; gap:6px; font-family:var(--disp);
+       font-weight:800; font-size:11px; letter-spacing:.1em; color:#fff; background:rgba(216,28,35,.92); padding:5px 9px; border-radius:7px}
+  .rec .d{width:7px; height:7px; border-radius:50%; background:#fff; animation:pulse 1.6s infinite}
+  .vb{position:absolute; bottom:8px; left:10px; font-family:var(--mono); font-weight:700; font-size:13px; color:#fff;
+      background:rgba(0,0,0,.6); padding:3px 9px; border-radius:7px; font-variant-numeric:tabular-nums}
+  .body{padding:13px 15px; display:flex; gap:11px; align-items:center}
+  .ava{width:40px; height:40px; border-radius:11px; object-fit:cover; border:1px solid var(--line); background:#000; flex-shrink:0}
+  .info{min-width:0; flex:1}
+  .nm{font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .hd{font-family:var(--mono); font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .status{margin-left:auto; flex-shrink:0; font-family:var(--disp); font-weight:800; font-size:10px; letter-spacing:.08em;
+          text-transform:uppercase; padding:5px 9px; border-radius:999px}
+  .status.live{color:#fff; background:linear-gradient(180deg,var(--live),#d81c23)}
+  .status.up{color:#1a1206; background:var(--amber)}
+  .status.off{color:var(--muted); background:var(--tile); box-shadow:inset 0 0 0 1px var(--line)}
+  .status.err{color:#ffb0b3; background:rgba(255,43,50,.1)}
+  .vtitle{padding:0 15px 14px; font-size:12.5px; color:var(--muted); line-height:1.5;
+          display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+  .offrow{padding:0 15px 14px; font-family:var(--mono); font-size:11.5px; color:var(--faint)}
+  .card.off{opacity:.82} .card.err{opacity:.7}
+
+  footer{margin-top:24px; font-family:var(--mono); font-size:11.5px; color:var(--faint); display:flex; flex-wrap:wrap; gap:6px 14px}
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important; transition:none!important} }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="brand"><span class="r"></span>유튜브 라이브 보드</div>
+
+  <div class="controls">
+    <div class="ctop">
+      <button class="btn go" id="go">가져오기 / 새로고침</button>
+      <label><input type="checkbox" id="onlyLive"> 라이브만 보기</label>
+      <button class="btn edit spacer" id="editBtn">채널 목록 편집</button>
+    </div>
+    <details id="editor">
+      <summary>채널 목록 (한 줄에 하나씩 · 주소 또는 @핸들)</summary>
+      <textarea id="list" spellcheck="false"></textarea>
+      <div class="hint">저장은 이 브라우저에 자동 보관됩니다 · 최대 40개 · <button class="btn edit" style="padding:5px 10px;font-size:12px" id="save">목록 저장 &amp; 새로고침</button></div>
+    </details>
+  </div>
+
+  <div id="summary" class="summary" style="display:none"></div>
+  <div id="msg" class="msg"></div>
+  <div id="grid" class="grid"></div>
+
+  <footer>
+    <span>YOUTUBE LIVE MONITOR</span><span class="sep">│</span>
+    <span>여러 채널 중 지금 라이브 중인 방송만 모아 표시 · 등록한 채널 범위 내</span>
+  </footer>
+</div>
+
+<script>
+const DEFAULTS = ["@maebulshow","@ytnnews24","@sbsnews8","@MBCNEWS11","@newskbs","@tvchosunnews","@KTV"];
+const KEY="yt-live-channels";
+const $=id=>document.getElementById(id);
+const go=$("go"), grid=$("grid"), msg=$("msg"), summary=$("summary"),
+      listEl=$("list"), onlyLive=$("onlyLive"), editor=$("editor");
+
+let channels = load();
+listEl.value = channels.join("\n");
+
+function load(){ try{ const s=JSON.parse(localStorage.getItem(KEY)); if(Array.isArray(s)&&s.length) return s; }catch{} return DEFAULTS.slice(); }
+function persist(arr){ try{ localStorage.setItem(KEY, JSON.stringify(arr)); }catch{} }
+function parseList(t){ return t.split(/[\n,]/).map(s=>s.trim()).filter(Boolean).slice(0,40); }
+
+$("editBtn").onclick=()=>{ editor.open=!editor.open; };
+$("save").onclick=(e)=>{ e.preventDefault(); channels=parseList(listEl.value); persist(channels); listEl.value=channels.join("\n"); editor.open=false; fetchAll(); };
+go.onclick=fetchAll;
+onlyLive.onchange=()=>render(LAST);
+
+let LAST=[];
+async function fetchAll(){
+  if(!channels.length){ msg.className="msg err"; msg.textContent="채널 목록이 비어 있습니다. '채널 목록 편집'에서 추가하세요."; return; }
+  grid.innerHTML=""; summary.style.display="none";
+  msg.className="msg load"; msg.innerHTML='<span class="spin"></span> '+channels.length+'개 채널의 라이브 상태를 확인하는 중…';
+  go.disabled=true;
+  try{
+    const r=await fetch("/api/live-list?urls="+encodeURIComponent(channels.join("\n")));
+    const data=await r.json();
+    if(!r.ok) throw new Error(data.error||"조회 실패");
+    msg.className="msg"; msg.style.display="none";
+    LAST=data.results; renderSummary(data);
+    render(data.results);
+  }catch(ex){ msg.className="msg err"; msg.textContent="❌ "+ex.message; }
+  finally{ go.disabled=false; }
+}
+
+const esc=s=>{const d=document.createElement("div");d.textContent=s==null?"":s;return d.innerHTML;};
+const int=n=>{const x=Number(String(n||"").replace(/[^\d]/g,""));return isFinite(x)&&x?x.toLocaleString("ko-KR"):null;};
+const kst=iso=>{try{return new Date(iso).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",dateStyle:"short",timeStyle:"short"});}catch{return iso;}};
+function rank(x){ if(!x.ok) return 4; if(x.live?.isLive) return 0; if(x.live?.state==="upcoming") return 1; return 2; }
+function viewers(x){ return Number(String(x.live?.concurrentViewers||"").replace(/[^\d]/g,""))||0; }
+
+function renderSummary(data){
+  const total=data.results.length;
+  const liveN=data.results.filter(x=>x.ok&&x.live?.isLive).length;
+  const errN=data.results.filter(x=>!x.ok).length;
+  summary.style.display="flex";
+  summary.innerHTML='<span class="on">● '+liveN+'개 라이브</span><span class="sep">│</span>'
+    +'<span><b>채널</b> '+total+'개</span>'+(errN?'<span class="sep">│</span><span><b>조회 실패</b> '+errN+'개</span>':'')
+    +'<span class="sep">│</span><span><b>조회</b> '+esc(kst(data.fetchedAt))+'</span>';
+}
+
+function render(results){
+  const list=results.slice().sort((a,b)=> rank(a)-rank(b) || viewers(b)-viewers(a) || (a.channel?.title||"").localeCompare(b.channel?.title||""));
+  const show = onlyLive.checked ? list.filter(x=>x.ok&&x.live?.isLive) : list;
+  if(!show.length){ grid.innerHTML='<div class="offrow" style="padding:20px">표시할 채널이 없습니다.</div>'; return; }
+  grid.innerHTML = show.map(card).join("");
+}
+
+function card(x){
+  if(!x.ok){
+    return '<div class="card err"><div class="body"><div class="info"><div class="nm">'+esc(x.input)+'</div>'
+      +'<div class="hd">조회 실패</div></div><span class="status err">Error</span></div>'
+      +'<div class="offrow">'+esc((x.error||"").slice(0,50))+'</div></div>';
+  }
+  const c=x.channel, l=x.live;
+  const detail="/channel?url="+encodeURIComponent(c.handle||c.channelId||x.input);
+  const ava='<img class="ava" src="'+esc(c.avatar||"")+'" alt="" onerror="this.style.visibility=\'hidden\'">';
+  const head='<div class="body">'+ava+'<div class="info"><div class="nm">'+esc(c.title||x.input)+'</div>'
+    +'<div class="hd">'+esc(c.handle||"")+' · 구독 '+esc((c.subscribers||"").replace(/^구독자\s*/,"")||"-")+'</div></div>';
+
+  if(l.isLive){
+    const vb=int(l.concurrentViewers);
+    return '<a class="card live" href="'+detail+'">'
+      +'<div class="thumb">'+(l.thumbnail?'<img src="'+esc(l.thumbnail)+'" alt="" onerror="this.parentNode.style.background=\'#1a1416\'">':"")
+      +'<span class="rec"><span class="d"></span>REC</span>'+(vb?'<span class="vb">👁 '+vb+'</span>':"")+'</div>'
+      +head+'<span class="status live">Live</span></div>'
+      +'<div class="vtitle">'+esc(l.title||"")+'</div></a>';
+  }
+  if(l.state==="upcoming"){
+    return '<a class="card" href="'+detail+'">'
+      +head+'<span class="status up">예정</span></div>'
+      +'<div class="offrow">시작 예정 · '+esc(l.scheduledStart?kst(l.scheduledStart):"미정")+'</div></a>';
+  }
+  return '<a class="card off" href="'+detail+'">'
+    +head+'<span class="status off">Offline</span></div>'
+    +'<div class="offrow">방송 '+esc((c.videoCount||"").replace(/^동영상\s*/,"")||"-")+' · 오프라인</div></a>';
+}
+
+fetchAll(); // 열자마자 조회
+</script>
+</body>
+</html>

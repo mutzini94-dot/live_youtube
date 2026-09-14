@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>채널 상세 · 온에어 보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#0e0b0c; --panel:#161213; --tile:#1e1819; --line:#2c2324;
+    --ink:#f4ecec; --muted:#a8999a; --faint:#7c6f70;
+    --live:#ff2b32; --live-2:#ff5a60; --glow:rgba(255,43,50,.45);
+    --amber:#f5a623; --offline:#6b6264;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --disp:"Archivo",system-ui,sans-serif;
+    --kr:"Noto Sans KR",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:radial-gradient(1200px 600px at 78% -10%, rgba(255,43,50,.10), transparent 60%),var(--bg);
+       color:var(--ink); font-family:var(--kr); -webkit-font-smoothing:antialiased; line-height:1.5}
+  .stage{max-width:980px; margin:0 auto; padding:22px 18px 48px}
+  a{color:inherit}
+
+  .navbar{display:flex; align-items:center; gap:12px; margin-bottom:18px}
+  .back{display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-size:13px; color:var(--muted);
+        text-decoration:none; border:1px solid var(--line); border-radius:10px; padding:9px 14px; background:var(--panel)}
+  .back:hover{color:var(--ink); border-color:var(--live)}
+  .refresh{margin-left:auto; border:0; border-radius:10px; padding:9px 16px; font-family:var(--kr); font-weight:700;
+           font-size:13px; color:#fff; cursor:pointer; background:linear-gradient(180deg,var(--live),#d81c23); box-shadow:0 6px 18px var(--glow)}
+  .refresh:disabled{opacity:.55; cursor:default; box-shadow:none}
+
+  .msg{font-family:var(--mono); font-size:13px; padding:14px 16px; border-radius:12px; display:none}
+  .msg.err{display:block; color:#ffb0b3; background:rgba(255,43,50,.08); border:1px solid rgba(255,43,50,.3)}
+  .msg.load{display:flex; align-items:center; gap:10px; color:var(--muted); background:var(--panel); border:1px solid var(--line)}
+  .spin{width:15px; height:15px; border:2px solid var(--line); border-top-color:var(--live); border-radius:50%; animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #board{display:none}
+
+  .signal{font-family:var(--mono); font-size:11.5px; letter-spacing:.03em; color:var(--faint); display:flex; flex-wrap:wrap;
+          gap:8px 16px; align-items:center; border:1px solid var(--line); border-radius:10px; padding:9px 14px; background:rgba(255,255,255,.015)}
+  .signal b{color:var(--muted); font-weight:500} .signal .on{color:var(--live-2)} .signal .offc{color:var(--offline)}
+  .sep{color:#3a2f30}
+
+  .topbar{display:flex; align-items:center; gap:16px; margin:22px 2px 20px}
+  .ava{width:64px; height:64px; border-radius:16px; object-fit:cover; border:1px solid var(--line); box-shadow:0 6px 20px rgba(0,0,0,.4); background:#000}
+  .who{min-width:0; flex:1}
+  .who h1{margin:0; font-weight:900; font-size:clamp(20px,3.4vw,28px); letter-spacing:-.01em; text-wrap:balance}
+  .who .handle{font-family:var(--mono); color:var(--muted); font-size:13px; margin-top:3px}
+  .pill{margin-left:auto; flex-shrink:0; display:inline-flex; align-items:center; gap:8px; font-family:var(--disp);
+        font-weight:800; letter-spacing:.08em; font-size:13px; text-transform:uppercase; padding:9px 14px; border-radius:999px}
+  .pill.live{color:#fff; background:linear-gradient(180deg,var(--live),#d81c23); box-shadow:0 0 0 1px rgba(255,90,96,.5),0 8px 24px var(--glow)}
+  .pill.up{color:#1a1206; background:linear-gradient(180deg,var(--amber),#d98e12)}
+  .pill.off{color:var(--muted); background:var(--tile); box-shadow:inset 0 0 0 1px var(--line)}
+  .dot{width:9px; height:9px; border-radius:50%; background:#fff}
+  .pill.live .dot{animation:pulse 1.6s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.55)}70%{box-shadow:0 0 0 7px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+
+  .onair{display:grid; grid-template-columns:1.15fr 1fr; gap:0; background:var(--panel); border:1px solid var(--line); border-radius:18px; overflow:hidden}
+  .onair.solo{grid-template-columns:1fr}
+  .screen{position:relative; aspect-ratio:16/9; background:#000}
+  .screen img{width:100%; height:100%; object-fit:cover; display:block}
+  .screen::after{content:""; position:absolute; inset:0; box-shadow:inset 0 0 0 1px rgba(255,43,50,.25),inset 0 -60px 60px -30px rgba(0,0,0,.7)}
+  .rec{position:absolute; top:12px; left:12px; display:inline-flex; align-items:center; gap:7px; font-family:var(--disp);
+       font-weight:800; font-size:12px; letter-spacing:.1em; color:#fff; background:rgba(216,28,35,.92); padding:6px 11px; border-radius:8px}
+  .rec .dot{width:8px; height:8px; animation:pulse 1.6s infinite}
+  .stamp{position:absolute; bottom:10px; right:12px; font-family:var(--mono); font-size:11px; color:#e8dede; background:rgba(0,0,0,.55); padding:3px 8px; border-radius:6px}
+  .readout{padding:22px; display:flex; flex-direction:column; min-width:0}
+  .eyebrow{font-family:var(--disp); text-transform:uppercase; letter-spacing:.14em; font-size:11px; font-weight:800; display:flex; align-items:center; gap:8px}
+  .eyebrow.live{color:var(--live-2)} .eyebrow.up{color:var(--amber)} .eyebrow.off{color:var(--offline)}
+  .eyebrow::after{content:""; flex:1; height:1px; background:linear-gradient(90deg,var(--line),transparent)}
+  .vtitle{font-weight:700; font-size:16px; line-height:1.45; margin:12px 0 0; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden}
+  .offmsg{margin-top:12px; color:var(--muted); font-size:14px; line-height:1.6}
+  .viewers{margin-top:auto; padding-top:18px}
+  .viewers .num{font-family:var(--mono); font-weight:700; font-size:clamp(30px,5vw,40px); letter-spacing:-.01em; font-variant-numeric:tabular-nums; line-height:1}
+  .viewers .lbl{color:var(--muted); font-size:12.5px; margin-top:5px}
+  .viewers .lbl b{color:var(--live-2); font-weight:700}
+  .cta{display:flex; gap:10px; margin-top:18px; flex-wrap:wrap}
+  .btn{font-family:var(--kr); font-weight:700; font-size:14px; text-decoration:none; border-radius:11px; padding:11px 16px; display:inline-flex; align-items:center; gap:8px; transition:transform .08s ease}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:linear-gradient(180deg,var(--live),#d81c23); color:#fff; box-shadow:0 8px 22px var(--glow)}
+  .btn.ghost{background:transparent; color:var(--ink); box-shadow:inset 0 0 0 1px var(--line)}
+
+  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:14px}
+  .tile{background:var(--tile); border:1px solid var(--line); border-radius:14px; padding:16px 16px 14px}
+  .tile .k{font-size:12px; color:var(--muted); letter-spacing:.02em}
+  .tile .v{font-family:var(--mono); font-weight:700; font-size:clamp(20px,3vw,27px); margin-top:8px; font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+  .tile.hot{border-color:rgba(255,43,50,.4)} .tile.hot .v{color:var(--live-2)}
+  .tile.dim .v{color:var(--faint)}
+  .tile .u{font-size:12px; color:var(--faint); margin-top:3px}
+
+  .meta{display:grid; grid-template-columns:1fr 1.35fr; gap:12px; margin-top:12px}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 18px}
+  .card h2{margin:0 0 12px; font-family:var(--disp); text-transform:uppercase; letter-spacing:.12em; font-size:11px; font-weight:800; color:var(--faint)}
+  .kv{display:flex; flex-direction:column; gap:11px}
+  .kv .row{display:flex; justify-content:space-between; gap:12px; align-items:baseline; border-bottom:1px dashed var(--line); padding-bottom:10px}
+  .kv .row:last-child{border-bottom:0; padding-bottom:0}
+  .kv .rk{color:var(--muted); font-size:13px; flex-shrink:0}
+  .kv .rv{font-family:var(--mono); font-size:12.5px; text-align:right; word-break:break-all}
+  .chips{display:flex; flex-wrap:wrap; gap:7px}
+  .chip{font-size:12px; color:var(--muted); background:var(--tile); border:1px solid var(--line); padding:5px 10px; border-radius:999px}
+  .desc{font-size:13px; color:#cabfbf; white-space:pre-wrap; line-height:1.65; max-height:150px; overflow:auto; margin-top:12px; padding-right:6px}
+  .desc::-webkit-scrollbar{width:8px} .desc::-webkit-scrollbar-thumb{background:#2c2324; border-radius:8px}
+  footer{margin-top:22px; display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center; font-family:var(--mono); font-size:11.5px; color:var(--faint)}
+
+  @media (max-width:720px){ .onair{grid-template-columns:1fr} .stats{grid-template-columns:repeat(2,1fr)} .meta{grid-template-columns:1fr} }
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important; transition:none!important} }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="navbar">
+    <a class="back" href="/">← 라이브 보드</a>
+    <button class="refresh" id="refresh">새로고침</button>
+  </div>
+  <div id="msg" class="msg"></div>
+  <div id="board"></div>
+</div>
+
+<script>
+const params=new URLSearchParams(location.search);
+const target=params.get("url")||"";
+const msg=document.getElementById("msg"), board=document.getElementById("board"), refresh=document.getElementById("refresh");
+refresh.onclick=load;
+
+const esc=s=>{const d=document.createElement("div");d.textContent=s==null?"":s;return d.innerHTML;};
+const int=n=>{const x=Number(String(n||"").replace(/[^\d]/g,""));return isFinite(x)&&x?x.toLocaleString("ko-KR"):null;};
+const kst=iso=>{if(!iso)return null;try{return new Date(iso).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",dateStyle:"medium",timeStyle:"short"});}catch{return iso;}};
+const kstTime=iso=>{if(!iso)return"";try{return new Date(iso).toLocaleTimeString("ko-KR",{timeZone:"Asia/Seoul",hour:"2-digit",minute:"2-digit"});}catch{return"";}};
+function elapsed(f,t){if(!f)return null;const a=new Date(f),z=t?new Date(t):new Date();let m=Math.floor((z-a)/60000);if(m<0||!isFinite(m))return null;const h=Math.floor(m/60);m%=60;return(h?h+"시간 ":"")+m+"분";}
+const strip=(s,re)=>(s||"").replace(re,"").trim()||"-";
+
+async function load(){
+  if(!target){ msg.className="msg err"; msg.textContent="채널이 지정되지 않았습니다."; return; }
+  board.style.display="none";
+  msg.className="msg load"; msg.innerHTML='<span class="spin"></span> 채널 정보를 가져오는 중…';
+  refresh.disabled=true;
+  try{
+    const r=await fetch("/api/channel?url="+encodeURIComponent(target));
+    const data=await r.json();
+    if(!r.ok) throw new Error(data.error||"조회 실패");
+    msg.className="msg"; msg.style.display="none";
+    render(data);
+  }catch(ex){ msg.className="msg err"; msg.textContent="❌ "+ex.message; }
+  finally{ refresh.disabled=false; }
+}
+
+function render({channel:c, live:l, fetchedAt}){
+  document.title = (c.title||"채널")+" · 온에어 보드";
+  const state=l.isLive?"live":(l.state==="upcoming"?"up":"off");
+  const pill = state==="live" ? '<span class="pill live"><span class="dot"></span>On Air</span>'
+             : state==="up"  ? '<span class="pill up"><span class="dot"></span>Upcoming</span>'
+             : '<span class="pill off"><span class="dot" style="background:var(--offline)"></span>Offline</span>';
+  const sigState = state==="live"?'<span class="on">● SIGNAL LIVE</span>'
+                 : state==="up"?'<span style="color:var(--amber)">● SIGNAL STANDBY</span>'
+                 : '<span class="offc">● SIGNAL OFFLINE</span>';
+
+  let onair;
+  if(state==="live"){
+    const vc=int(l.concurrentViewers), el=elapsed(l.startedAt,fetchedAt);
+    onair='<section class="onair">'
+      +(l.thumbnail?'<div class="screen"><img src="'+esc(l.thumbnail)+'" alt="방송 썸네일" onerror="this.parentNode.style.display=\'none\'">'
+        +'<span class="rec"><span class="dot"></span>REC</span>'+(l.startedAt?'<span class="stamp">LIVE · '+kstTime(l.startedAt)+' KST 시작</span>':"")+'</div>':"")
+      +'<div class="readout"><div class="eyebrow live">실시간 방송 중</div>'
+      +'<p class="vtitle">'+esc(l.title)+'</p>'
+      +'<div class="viewers"><div class="num">'+(vc||"—")+'</div>'
+      +'<div class="lbl"><b>동시 시청자</b>'+(el?' · 약 '+el+'째 방송 중':"")+'</div></div>'
+      +'<div class="cta"><a class="btn primary" href="'+esc(l.watchUrl)+'" target="_blank" rel="noopener">▶ 방송 보러가기</a>'
+      +'<a class="btn ghost" href="'+esc(c.channelUrl||("https://www.youtube.com/"+c.handle))+'" target="_blank" rel="noopener">유튜브 채널 열기</a></div></div></section>';
+  } else {
+    const eb=state==="up"?'<div class="eyebrow up">방송 예정</div>':'<div class="eyebrow off">현재 방송 없음</div>';
+    const body=state==="up"
+      ? '<p class="vtitle">'+esc(l.title)+'</p><div class="offmsg">시작 예정 · '+(kst(l.scheduledStart)||"미정")+'</div>'
+      : '<div class="offmsg">지금은 실시간 방송 중이 아닙니다. 최근 영상은 채널에서 확인하세요.</div>';
+    const cta='<div class="cta">'+(state==="up"&&l.watchUrl?'<a class="btn primary" href="'+esc(l.watchUrl)+'" target="_blank" rel="noopener">예약 페이지</a>':"")
+      +'<a class="btn ghost" href="'+esc(c.channelUrl||("https://www.youtube.com/"+c.handle))+'" target="_blank" rel="noopener">유튜브 채널 열기</a></div>';
+    onair='<section class="onair solo"><div class="readout" style="min-height:150px">'+eb+body+'<div style="margin-top:auto">'+cta+'</div></div></section>';
+  }
+
+  const subs=strip(c.subscribers,/^구독자\s*/), vids=strip(c.videoCount,/^동영상\s*/);
+  const stats='<section class="stats">'
+    +'<div class="tile"><div class="k">구독자</div><div class="v">'+esc(subs)+'</div><div class="u">subscribers</div></div>'
+    +'<div class="tile"><div class="k">동영상</div><div class="v">'+esc(vids)+'</div><div class="u">videos</div></div>'
+    +(state==="live"
+      ? '<div class="tile hot"><div class="k">동시 시청자</div><div class="v">'+(int(l.concurrentViewers)||"—")+'</div><div class="u">watching now</div></div>'
+        +'<div class="tile"><div class="k">현재 방송 총 조회</div><div class="v">'+(int(l.totalViews)||"—")+'</div><div class="u">views</div></div>'
+      : '<div class="tile dim"><div class="k">동시 시청자</div><div class="v">—</div><div class="u">offline</div></div>'
+        +'<div class="tile dim"><div class="k">방송 상태</div><div class="v" style="font-size:18px">'+(state==="up"?"예정":"오프라인")+'</div><div class="u">status</div></div>')
+    +'</section>';
+
+  const kws=(c.keywords||"").split(";").map(s=>s.trim()).filter(Boolean).slice(0,12);
+  const chips=kws.length?'<h2 style="margin-top:18px">Keywords</h2><div class="chips">'+kws.map(k=>'<span class="chip">'+esc(k)+'</span>').join("")+'</div>':"";
+  const meta='<section class="meta"><div class="card"><h2>Channel</h2><div class="kv">'
+    +'<div class="row"><span class="rk">채널 ID</span><span class="rv">'+esc(c.channelId||"-")+'</span></div>'
+    +'<div class="row"><span class="rk">핸들</span><span class="rv">'+esc(c.handle||"-")+'</span></div>'
+    +(state==="live"&&l.startedAt?'<div class="row"><span class="rk">방송 시작</span><span class="rv">'+kst(l.startedAt)+'</span></div>':"")
+    +'<div class="row"><span class="rk">안전 등급</span><span class="rv">'+(c.isFamilySafe?"FamilySafe":"-")+'</span></div>'
+    +'</div>'+chips+'</div>'
+    +'<div class="card"><h2>About</h2><div class="desc">'+esc(c.description||"설명 없음")+'</div></div></section>';
+
+  const signal='<div class="signal">'+sigState+'<span class="sep">│</span>'
+    +'<span><b>SRC</b> '+esc((c.handle||c.resolvedUrl||"").replace(/^https?:\/\/(www\.)?/,""))+'</span><span class="sep">│</span>'
+    +'<span><b>CH</b> '+esc(c.channelId||"-")+'</span><span class="sep">│</span>'
+    +'<span><b>조회</b> '+esc(kst(fetchedAt))+'</span></div>';
+  const header='<div class="topbar">'
+    +'<img class="ava" src="'+esc(c.avatar||"")+'" alt="프로필" onerror="this.style.visibility=\'hidden\'">'
+    +'<div class="who"><h1>'+esc(c.title||"(제목 없음)")+'</h1><div class="handle">'+esc(c.handle||"")+'</div></div>'+pill+'</div>';
+
+  board.innerHTML=signal+header+onair+stats+meta
+    +'<footer><span>YOUTUBE CHANNEL MONITOR</span><span class="sep">│</span><span>조회 시각 '+esc(kst(fetchedAt))+'</span></footer>';
+  board.style.display="block";
+}
+
+load();
+</script>
+</body>
+</html>
