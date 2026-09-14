@@ -1,0 +1,217 @@
+<title>매불쇼 온에어 보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#0e0b0c; --panel:#161213; --tile:#1e1819; --line:#2c2324;
+    --ink:#f4ecec; --muted:#a8999a; --faint:#7c6f70;
+    --live:#ff2b32; --live-2:#ff5a60; --glow:rgba(255,43,50,.45);
+    --amber:#f5a623; --offline:#6b6264;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --disp:"Archivo",system-ui,sans-serif;
+    --kr:"Noto Sans KR",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:
+      radial-gradient(1200px 600px at 78% -10%, rgba(255,43,50,.10), transparent 60%),
+      var(--bg);
+    color:var(--ink); font-family:var(--kr);
+    -webkit-font-smoothing:antialiased; line-height:1.5;
+  }
+  .stage{max-width:980px; margin:0 auto; padding:22px 18px 40px}
+
+  /* ── signal strip ── */
+  .signal{
+    font-family:var(--mono); font-size:11.5px; letter-spacing:.03em;
+    color:var(--faint); display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center;
+    border:1px solid var(--line); border-radius:10px; padding:9px 14px; background:rgba(255,255,255,.015);
+  }
+  .signal b{color:var(--muted); font-weight:500}
+  .signal .on{color:var(--live-2)}
+  .sep{color:#3a2f30}
+
+  /* ── channel header ── */
+  .topbar{display:flex; align-items:center; gap:16px; margin:22px 2px 20px}
+  .ava{width:64px; height:64px; border-radius:16px; object-fit:cover; border:1px solid var(--line);
+       box-shadow:0 6px 20px rgba(0,0,0,.4)}
+  .who{min-width:0; flex:1}
+  .who h1{margin:0; font-family:var(--kr); font-weight:900; font-size:clamp(20px,3.4vw,28px);
+          letter-spacing:-.01em; text-wrap:balance}
+  .who .handle{font-family:var(--mono); color:var(--muted); font-size:13px; margin-top:3px}
+  .pill{margin-left:auto; flex-shrink:0; display:inline-flex; align-items:center; gap:8px;
+        font-family:var(--disp); font-weight:800; letter-spacing:.08em; font-size:13px;
+        text-transform:uppercase; padding:9px 14px; border-radius:999px;}
+  .pill.live{color:#fff; background:linear-gradient(180deg,var(--live),#d81c23);
+             box-shadow:0 0 0 1px rgba(255,90,96,.5), 0 8px 24px var(--glow)}
+  .pill.off{color:var(--muted); background:var(--tile); box-shadow:inset 0 0 0 1px var(--line)}
+  .dot{width:9px; height:9px; border-radius:50%; background:#fff}
+  .pill.live .dot{background:#fff; box-shadow:0 0 0 0 rgba(255,255,255,.7); animation:pulse 1.6s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.55)}70%{box-shadow:0 0 0 7px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+
+  /* ── on-air panel ── */
+  .onair{display:grid; grid-template-columns:1.15fr 1fr; gap:0;
+         background:var(--panel); border:1px solid var(--line); border-radius:18px; overflow:hidden}
+  .screen{position:relative; aspect-ratio:16/9; background:#000}
+  .screen img{width:100%; height:100%; object-fit:cover; display:block}
+  .screen::after{content:""; position:absolute; inset:0; box-shadow:inset 0 0 0 1px rgba(255,43,50,.25),
+                 inset 0 -60px 60px -30px rgba(0,0,0,.7)}
+  .rec{position:absolute; top:12px; left:12px; display:inline-flex; align-items:center; gap:7px;
+       font-family:var(--disp); font-weight:800; font-size:12px; letter-spacing:.1em; color:#fff;
+       background:rgba(216,28,35,.92); padding:6px 11px; border-radius:8px; backdrop-filter:blur(2px)}
+  .rec .dot{width:8px; height:8px; background:#fff; animation:pulse 1.6s infinite}
+  .stamp{position:absolute; bottom:10px; right:12px; font-family:var(--mono); font-size:11px;
+         color:#e8dede; background:rgba(0,0,0,.55); padding:3px 8px; border-radius:6px}
+
+  .readout{padding:22px 22px 20px; display:flex; flex-direction:column; min-width:0}
+  .eyebrow{font-family:var(--disp); text-transform:uppercase; letter-spacing:.14em; font-size:11px;
+           font-weight:800; color:var(--live-2); display:flex; align-items:center; gap:8px}
+  .eyebrow::after{content:""; flex:1; height:1px; background:linear-gradient(90deg,var(--line),transparent)}
+  .vtitle{font-weight:700; font-size:16px; line-height:1.45; margin:12px 0 0;
+          display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden}
+  .viewers{margin-top:auto; padding-top:18px}
+  .viewers .num{font-family:var(--mono); font-weight:700; font-size:clamp(30px,5vw,40px);
+                letter-spacing:-.01em; font-variant-numeric:tabular-nums; line-height:1}
+  .viewers .lbl{color:var(--muted); font-size:12.5px; margin-top:5px}
+  .viewers .lbl b{color:var(--live-2); font-weight:700}
+  .cta{display:flex; gap:10px; margin-top:18px; flex-wrap:wrap}
+  .btn{font-family:var(--kr); font-weight:700; font-size:14px; text-decoration:none; border-radius:11px;
+       padding:11px 16px; display:inline-flex; align-items:center; gap:8px; transition:transform .08s ease}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:linear-gradient(180deg,var(--live),#d81c23); color:#fff;
+               box-shadow:0 8px 22px var(--glow)}
+  .btn.ghost{background:transparent; color:var(--ink); box-shadow:inset 0 0 0 1px var(--line)}
+
+  /* ── stats ── */
+  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:14px}
+  .tile{background:var(--tile); border:1px solid var(--line); border-radius:14px; padding:16px 16px 14px}
+  .tile .k{font-size:12px; color:var(--muted); letter-spacing:.02em}
+  .tile .v{font-family:var(--mono); font-weight:700; font-size:clamp(20px,3vw,27px); margin-top:8px;
+           font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+  .tile.hot{border-color:rgba(255,43,50,.4)}
+  .tile.hot .v{color:var(--live-2)}
+  .tile .u{font-size:12px; color:var(--faint); margin-top:3px}
+
+  /* ── meta ── */
+  .meta{display:grid; grid-template-columns:1fr 1.35fr; gap:12px; margin-top:12px}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 18px}
+  .card h2{margin:0 0 12px; font-family:var(--disp); text-transform:uppercase; letter-spacing:.12em;
+           font-size:11px; font-weight:800; color:var(--faint)}
+  .kv{display:flex; flex-direction:column; gap:11px}
+  .kv .row{display:flex; justify-content:space-between; gap:12px; align-items:baseline;
+           border-bottom:1px dashed var(--line); padding-bottom:10px}
+  .kv .row:last-child{border-bottom:0; padding-bottom:0}
+  .kv .rk{color:var(--muted); font-size:13px; flex-shrink:0}
+  .kv .rv{font-family:var(--mono); font-size:12.5px; text-align:right; word-break:break-all}
+  .chips{display:flex; flex-wrap:wrap; gap:7px; margin-top:2px}
+  .chip{font-size:12px; color:var(--muted); background:var(--tile); border:1px solid var(--line);
+        padding:5px 10px; border-radius:999px}
+  .desc{font-size:13px; color:#cabfbf; white-space:pre-wrap; line-height:1.65; max-height:150px;
+        overflow:auto; margin-top:12px; padding-right:6px}
+  .desc a{color:var(--live-2)}
+  .desc::-webkit-scrollbar{width:8px} .desc::-webkit-scrollbar-thumb{background:#2c2324; border-radius:8px}
+
+  /* ── footer ── */
+  footer{margin-top:22px; display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center;
+         font-family:var(--mono); font-size:11.5px; color:var(--faint)}
+  footer .warn{color:var(--amber)}
+
+  @media (max-width:720px){
+    .onair{grid-template-columns:1fr}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .meta{grid-template-columns:1fr}
+    .pill{position:static}
+  }
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important} }
+</style>
+
+<div class="stage">
+
+  <div class="signal">
+    <span class="on">● SIGNAL LIVE</span><span class="sep">│</span>
+    <span><b>SRC</b> youtube.com/@maebulshow</span><span class="sep">│</span>
+    <span><b>CH</b> UCMYhq9OyGI5UEz_NTAoHY7A</span><span class="sep">│</span>
+    <span><b>조회</b> 2026-09-11 16:13 KST</span>
+  </div>
+
+  <div class="topbar">
+    <img class="ava" src="__AVATAR__" alt="채널 프로필">
+    <div class="who">
+      <h1>[팟빵] 최욱의 매불쇼</h1>
+      <div class="handle">@maebulshow</div>
+    </div>
+    <span class="pill live"><span class="dot"></span>On Air</span>
+  </div>
+
+  <section class="onair">
+    <div class="screen">
+      <img src="__THUMB__" alt="실시간 방송 썸네일">
+      <span class="rec"><span class="dot"></span>REC</span>
+      <span class="stamp">LIVE · 13:46 KST 시작</span>
+    </div>
+    <div class="readout">
+      <div class="eyebrow">실시간 방송 중</div>
+      <p class="vtitle">●9월 11일 금요일 [LIVE] · 뉴스(민동기·김정환·이광철·김준형·조용근·박현광·김대호·봉지욱·한상진), 영화(칸찬일·라이너·송일국·송선미·거의없다)</p>
+      <div class="viewers">
+        <div class="num">77,568</div>
+        <div class="lbl"><b>동시 시청자</b> · 약 2시간 27분째 방송 중</div>
+      </div>
+      <div class="cta">
+        <a class="btn primary" href="https://www.youtube.com/watch?v=tA8jk9xGJm8" target="_blank" rel="noopener">▶ 방송 보러가기</a>
+        <a class="btn ghost" href="https://www.youtube.com/@maebulshow" target="_blank" rel="noopener">채널 열기</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="tile"><div class="k">구독자</div><div class="v">283만</div><div class="u">subscribers</div></div>
+    <div class="tile"><div class="k">동영상</div><div class="v">3.8천</div><div class="u">videos</div></div>
+    <div class="tile hot"><div class="k">동시 시청자</div><div class="v">77,568</div><div class="u">watching now</div></div>
+    <div class="tile"><div class="k">현재 방송 총 조회</div><div class="v">176,614</div><div class="u">views</div></div>
+  </section>
+
+  <section class="meta">
+    <div class="card">
+      <h2>Channel</h2>
+      <div class="kv">
+        <div class="row"><span class="rk">채널 ID</span><span class="rv">UCMYhq9OyGI5UEz_NTAoHY7A</span></div>
+        <div class="row"><span class="rk">핸들</span><span class="rv">@maebulshow</span></div>
+        <div class="row"><span class="rk">방송 시작</span><span class="rv">2026-09-11 13:46 KST</span></div>
+        <div class="row"><span class="rk">안전 등급</span><span class="rv">FamilySafe</span></div>
+      </div>
+      <h2 style="margin-top:18px">Keywords</h2>
+      <div class="chips">
+        <span class="chip">매불쇼</span><span class="chip">최욱</span><span class="chip">팟빵</span>
+        <span class="chip">팟캐스트</span><span class="chip">최욱의 불금쇼</span><span class="chip">꿀잼</span>
+        <span class="chip">클립영상</span><span class="chip">시사·정치·뉴스</span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>About</h2>
+      <div class="desc">고품격 예능 콘텐츠!
+압도적 재미 매불쇼!
+세상의 모든 이야기를 재미로 풀어내는 국내 유일 버라이어티 쇼!
+
+압도적 재미, 매불쇼는
+매주 (월~금) PM 2시~4시 팟빵앱을 통해 라이브로 들을 수 있습니다.
+라이브 파일은 당일 밤 팟빵에 업로드됩니다.
+
+[매불쇼]는 오디오 플랫폼 ㈜팟빵이 제작하는 오리지널 프로그램입니다.
+
+매불쇼 팟빵 채널 · podbbang.com/channels/16898
+문의 · mbshow@podbbang.com
+광고 문의 · ad@podbbang.com
+
+ⓒ팟빵 Corp ALL RIGHTS RESERVED</div>
+    </div>
+  </section>
+
+  <footer>
+    <span>YOUTUBE CHANNEL MONITOR</span><span class="sep">│</span>
+    <span class="warn">■ 스냅샷 — 2026-09-11 16:13 KST 조회 시점 데이터</span><span class="sep">│</span>
+    <span>실시간 갱신은 로컬 도구 youtube-info 로</span>
+  </footer>
+
+</div>

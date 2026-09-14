@@ -1,0 +1,16 @@
+{
+  "name": "youtube-channel-info",
+  "version": "1.0.0",
+  "description": "유튜브 채널 주소를 입력하면 채널 정보와 실시간 방송 여부를 가져오는 프로그램 (API 키 불필요)",
+  "type": "module",
+  "bin": {
+    "yt-info": "youtube-info.mjs"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "info": "node youtube-info.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
