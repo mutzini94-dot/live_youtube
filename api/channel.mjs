@@ -1,5 +1,5 @@
 // Vercel 서버리스 함수: 단일 채널 상세 (GET /api/channel?url=@handle)
-import { getChannelInfo } from "../youtube-info.mjs";
+import { getChannelInfo } from "../channel-info.mjs";
 
 export default async function handler(req, res) {
   const params = new URL(req.url, "http://localhost").searchParams;

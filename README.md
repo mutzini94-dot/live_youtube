@@ -75,19 +75,28 @@ node server.mjs
 > 차단되어 "입력 → 실시간 가져오기"가 불가능합니다. 실시간 입력 조회는 **이 로컬 웹앱에서만** 동작합니다.
 > 아티팩트는 조회 시점 데이터를 담은 **스냅샷**으로만 제공됩니다.
 
+## 데이터 조회 방식 (중요)
+
+- **YouTube Data API v3** (권장, 서버/클라우드에서 안정적): 환경변수 `YT_API_KEY` 가 있으면 자동으로 API 를 사용합니다.
+- **페이지 스크래핑** (키 불필요, 로컬용): 키가 없으면 자동 폴백. 단, **Vercel 등 데이터센터 IP 에서는 유튜브가 라이브(재생) 데이터를 막아 라이브 감지가 실패**합니다 → 그래서 클라우드 배포에는 API 키가 필요합니다.
+
+### API 키 발급
+1. [Google Cloud Console](https://console.cloud.google.com) → 프로젝트 생성
+2. **APIs & Services → Library → “YouTube Data API v3” → Enable**
+3. **Credentials → Create credentials → API key** → 키 복사
+
 ## 배포 (Vercel)
 
-이 저장소는 **Vercel 서버리스**로 바로 배포되도록 구성돼 있습니다.
+1. [vercel.com](https://vercel.com) 로그인 → **Add New… → Project** → GitHub 저장소 `mutzini94-dot/live_youtube` **Import**
+2. **Settings → Environment Variables** 에 `YT_API_KEY = <발급받은 키>` 추가 (Production/Preview 모두 체크)
+3. **Deploy** (또는 재배포). `vercel.json` 이 `/channel` 정적 페이지 rewrite 와 `api/*` 함수(maxDuration 30s)를 구성합니다.
+4. **Settings → Git** 에서 GitHub 연동/자동배포를 켜두면 이후 push 시 자동 배포됩니다.
 
-1. [vercel.com](https://vercel.com) 로그인 → **Add New… → Project**
-2. GitHub 저장소 `mutzini94-dot/live_youtube` 를 **Import**
-3. 프레임워크/빌드 설정은 그대로 두고(별도 빌드 불필요) **Deploy**
-
-`vercel.json` 이 모든 경로를 서버리스 함수(`api/app.mjs`)로 보내며, 이 함수는 로컬과 동일한 핸들러(`app.mjs`)를 사용합니다.
-배포 후 `https://<프로젝트>.vercel.app` 에서 라이브 보드가 그대로 동작합니다.
-
-> ⚠️ 서버리스 함수 실행시간 제한(기본 10s, `vercel.json`에서 30s로 설정)이 있어, 한 번에 조회하는 채널 수가 너무 많으면 타임아웃될 수 있습니다.
-> 또한 유튜브가 데이터센터 IP의 요청을 간헐적으로 제한할 수 있습니다(대량 조회 시 불안정).
+> ⚠️ **API 쿼터**: 라이브 여부 판별은 `search.list`(호출당 100유닛)를 사용합니다. 기본 무료 쿼터는 하루 10,000유닛이라
+> 채널 7개 대시보드 1회 새로고침 ≈ 700유닛 → 하루 약 14회 수준입니다. 45초 서버 캐시로 반복 조회 낭비를 줄였고,
+> 라이브 보드에서는 “예정” 감지를 생략해 쿼터를 절약합니다. 더 필요하면 Google Cloud 콘솔에서 쿼터 상향을 신청하세요.
+>
+> ⚠️ 서버리스 함수 실행시간 제한(`vercel.json` 에서 30s)이 있어, 한 번에 조회하는 채널 수가 아주 많으면 타임아웃될 수 있습니다.
 
 ## 3) 다른 코드에서 모듈로 사용
 

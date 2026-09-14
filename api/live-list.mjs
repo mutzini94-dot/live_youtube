@@ -1,5 +1,6 @@
 // Vercel 서버리스 함수: 여러 채널의 라이브 상태 (GET /api/live-list?urls=@a,@b,...)
-import { getChannelInfo } from "../youtube-info.mjs";
+// API 모드에서는 쿼터 절약을 위해 "예정" 감지를 생략(offline 처리)합니다.
+import { getChannelInfo } from "../channel-info.mjs";
 
 // 병렬 조회 (동시 실행 수 제한)
 async function pool(items, size, fn) {
@@ -27,7 +28,7 @@ export default async function handler(req, res) {
   try {
     const results = await pool(list, 6, async (u) => {
       try {
-        const d = await getChannelInfo(u);
+        const d = await getChannelInfo(u, { includeUpcoming: false });
         return { input: u, ok: true, channel: d.channel, live: d.live };
       } catch (e) {
         return { input: u, ok: false, error: e.message };
